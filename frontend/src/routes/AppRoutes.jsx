@@ -12,6 +12,9 @@ import NominationListPage from '../features/nominations/pages/NominationListPage
 import NominationCreatePage from '../features/nominations/pages/NominationCreatePage';
 import NominationDetailPage from '../features/nominations/pages/NominationDetailPage';
 import NomineeProfilePage from '../features/profile/pages/NomineeProfilePage';
+import VotePage from '../features/voting/pages/VotePage';
+import EvaluationPage from '../features/evaluations/pages/EvaluationPage';
+import ResultsPage from '../features/results/pages/ResultsPage';
 
 /**
  * All application routes.
@@ -50,17 +53,17 @@ export default function AppRoutes() {
         <Route path="/my-profile" element={<NomineeProfilePage />} />
 
         {/* Voter routes */}
-        <Route path="/vote" element={<PlaceholderPage title="Cast Vote" />} />
+        <Route path="/vote" element={<VotePage />} />
+
+        {/* Evaluation routes */}
+        <Route path="/evaluations" element={<EvaluationPage />} />
+        <Route path="/my-evaluations" element={<EvaluationPage />} />
 
         {/* Organizer routes */}
         <Route path="/voting-overview" element={<PlaceholderPage title="Voting Overview" />} />
-        <Route path="/evaluations" element={<PlaceholderPage title="Evaluations" />} />
-        <Route path="/results" element={<PlaceholderPage title="Results" />} />
+        <Route path="/results" element={<ResultsPage />} />
         <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
         <Route path="/feedback" element={<PlaceholderPage title="Feedback" />} />
-
-        {/* Judge routes */}
-        <Route path="/my-evaluations" element={<PlaceholderPage title="My Evaluations" />} />
 
         {/* Admin routes */}
         <Route path="/users" element={<PlaceholderPage title="User Management" />} />
