@@ -1,0 +1,107 @@
+.nomination-create-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.nomination-form-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.nomination-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--slate-100);
+}
+
+.nomination-section:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.nomination-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nomination-section-title {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--slate-900);
+}
+
+.nomination-section-sub {
+  font-size: var(--font-xs);
+  color: var(--slate-500);
+}
+
+.nomination-doc-upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--slate-50);
+  border: 1px dashed var(--slate-300);
+  border-radius: var(--radius-lg);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.nomination-doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nomination-doc-title {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--slate-800);
+}
+
+.nomination-doc-type-badge {
+  font-size: 11px;
+  background: var(--primary-100);
+  color: var(--primary-700);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  width: fit-content;
+}
+
+.nomination-declaration-box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+}
+
+.nomination-declaration-box input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--primary-600);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.nomination-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

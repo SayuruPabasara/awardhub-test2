@@ -1,0 +1,78 @@
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-base);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.stat-card-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.stat-card-primary .stat-card-icon-wrap {
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+.stat-card-accent .stat-card-icon-wrap {
+  background: var(--accent-50);
+  color: var(--accent-600);
+}
+.stat-card-success .stat-card-icon-wrap {
+  background: var(--success-50);
+  color: var(--success-600);
+}
+.stat-card-info .stat-card-icon-wrap {
+  background: var(--info-50);
+  color: var(--info-600);
+}
+.stat-card-danger .stat-card-icon-wrap {
+  background: var(--error-50);
+  color: var(--error-600);
+}
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stat-card-label {
+  font-size: var(--font-sm);
+  color: var(--slate-500);
+  font-weight: var(--weight-medium);
+}
+
+.stat-card-value {
+  font-size: var(--font-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--slate-900);
+  line-height: 1;
+}
+
+.stat-card-trend {
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.trend-up {
+  color: var(--success-600);
+}
+
+.trend-down {
+  color: var(--error-600);
+}

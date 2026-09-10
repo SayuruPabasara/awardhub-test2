@@ -1,0 +1,125 @@
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  font-size: var(--font-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--slate-200);
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+  background: var(--slate-50);
+}
+
+.data-table th.sortable {
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.data-table th.sortable:hover {
+  color: var(--primary-600);
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sort-icon {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.sort-icon.active {
+  opacity: 1;
+  color: var(--primary-600);
+}
+
+.data-table td {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-sm);
+  color: var(--slate-700);
+  border-bottom: 1px solid var(--slate-100);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background: var(--slate-50);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Pagination */
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--slate-100);
+  font-size: var(--font-sm);
+  color: var(--slate-500);
+}
+
+.table-pagination-info {
+  font-size: var(--font-sm);
+  color: var(--slate-500);
+}
+
+.table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.table-pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  color: var(--slate-600);
+  font-size: var(--font-sm);
+  font-weight: var(--weight-medium);
+  transition: all var(--transition-fast);
+}
+
+.table-pagination-btn:hover:not(:disabled) {
+  background: var(--slate-100);
+  color: var(--slate-800);
+}
+
+.table-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.table-pagination-btn.active {
+  background: var(--primary-600);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .table-pagination {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}

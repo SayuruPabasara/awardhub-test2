@@ -1,0 +1,137 @@
+package com.awardhub.awardhub.category.dto;
+
+import com.awardhub.awardhub.category.entity.CategoryStatus;
+import com.awardhub.awardhub.category.entity.EvaluationMethod;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
+import java.util.List;
+
+public class CreateCategoryRequest {
+
+    @NotBlank(message = "Category name is required")
+    private String categoryName;
+
+    private String description;
+
+    private String eligibilityCriteria;
+
+    private LocalDateTime nominationDeadline;
+
+    private LocalDateTime votingStartDate;
+
+    private LocalDateTime votingEndDate;
+
+    @NotNull(message = "Evaluation method is required")
+    private EvaluationMethod evaluationMethod;
+
+    private Double votingWeightage;
+
+    private Double judgingWeightage;
+
+    private Integer maxVotesPerVoter;
+
+    private CategoryStatus status;
+
+    private List<String> requiredDocumentTypes;
+
+    public CreateCategoryRequest() {}
+
+    // Getters and Setters
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getEligibilityCriteria() {
+        return eligibilityCriteria;
+    }
+
+    public void setEligibilityCriteria(String eligibilityCriteria) {
+        this.eligibilityCriteria = eligibilityCriteria;
+    }
+
+    public LocalDateTime getNominationDeadline() {
+        return nominationDeadline;
+    }
+
+    public void setNominationDeadline(LocalDateTime nominationDeadline) {
+        this.nominationDeadline = nominationDeadline;
+    }
+
+    public LocalDateTime getVotingStartDate() {
+        return votingStartDate;
+    }
+
+    public void setVotingStartDate(LocalDateTime votingStartDate) {
+        this.votingStartDate = votingStartDate;
+    }
+
+    public LocalDateTime getVotingEndDate() {
+        return votingEndDate;
+    }
+
+    public void setVotingEndDate(LocalDateTime votingEndDate) {
+        this.votingEndDate = votingEndDate;
+    }
+
+    public EvaluationMethod getEvaluationMethod() {
+        return evaluationMethod;
+    }
+
+    public void setEvaluationMethod(EvaluationMethod evaluationMethod) {
+        this.evaluationMethod = evaluationMethod;
+    }
+
+    public Double getVotingWeightage() {
+        return votingWeightage;
+    }
+
+    public void setVotingWeightage(Double votingWeightage) {
+        this.votingWeightage = votingWeightage;
+    }
+
+    public Double getJudgingWeightage() {
+        return judgingWeightage;
+    }
+
+    public void setJudgingWeightage(Double judgingWeightage) {
+        this.judgingWeightage = judgingWeightage;
+    }
+
+    public Integer getMaxVotesPerVoter() {
+        return maxVotesPerVoter;
+    }
+
+    public void setMaxVotesPerVoter(Integer maxVotesPerVoter) {
+        this.maxVotesPerVoter = maxVotesPerVoter;
+    }
+
+    public CategoryStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CategoryStatus status) {
+        this.status = status;
+    }
+
+    public List<String> getRequiredDocumentTypes() {
+        return requiredDocumentTypes;
+    }
+
+    public void setRequiredDocumentTypes(List<String> requiredDocumentTypes) {
+        this.requiredDocumentTypes = requiredDocumentTypes;
+    }
+}
