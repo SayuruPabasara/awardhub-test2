@@ -17,50 +17,8 @@ import Button from '../../../components/Button';
 import Card from '../../../components/Card';
 import Badge from '../../../components/Badge';
 import Loader from '../../../components/Loader';
+import EmptyState from '../../../components/EmptyState';
 import NominationReviewModal from '../components/NominationReviewModal';
-
-const MOCK_NOMINATION_DETAIL = {
-  nominationId: 1,
-  title: 'Autonomous Drone Navigation for Search & Rescue',
-  nomineeId: 10,
-  nomineeName: 'Dr. Sarah Chen',
-  nomineeEmail: 'sarah.chen@university.edu',
-  categoryId: 1,
-  categoryName: 'Outstanding Research Innovation',
-  achievementDescription:
-    'Developed a novel computer vision and LiDAR sensor-fusion algorithm enabling autonomous aerial drones to navigate dense, GPS-denied environments during disaster scenarios. Successfully deployed in 3 mountain rescue operations in 2025.',
-  evidenceDetails:
-    '• Published in IEEE Transactions on Robotics (June 2025)\n• 42 registered citations within 12 months\n• 3 live trial validations with National Search & Rescue command\n• 1 provisional patent granted (US-2025-98321)',
-  declaration: true,
-  status: 'SUBMITTED',
-  submissionDate: '2026-09-08T14:30:00',
-  documents: [
-    {
-      documentId: 101,
-      documentType: 'RESUME',
-      fileName: 'dr_sarah_chen_cv.pdf',
-      fileFormat: 'application/pdf',
-      size: 420000,
-      verificationStatus: 'VERIFIED',
-    },
-    {
-      documentId: 102,
-      documentType: 'PROJECT_REPORT',
-      fileName: 'autonomous_drone_rescue_report.pdf',
-      fileFormat: 'application/pdf',
-      size: 3200000,
-      verificationStatus: 'VERIFIED',
-    },
-    {
-      documentId: 103,
-      documentType: 'CERTIFICATES',
-      fileName: 'ieee_publication_proof.pdf',
-      fileFormat: 'application/pdf',
-      size: 890000,
-      verificationStatus: 'VERIFIED',
-    },
-  ],
-};
 
 export default function NominationDetailPage() {
   const { id } = useParams();
@@ -73,6 +31,7 @@ export default function NominationDetailPage() {
 
   const [nomination, setNomination] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
 
@@ -80,15 +39,12 @@ export default function NominationDetailPage() {
     const fetchDetail = async () => {
       try {
         setLoading(true);
+        setError(null);
         const res = await nominationApi.getById(id);
-        if (res?.data?.data) {
-          setNomination(res.data.data);
-        } else {
-          setNomination(MOCK_NOMINATION_DETAIL);
-        }
+        setNomination(res?.data?.data || null);
       } catch (err) {
-        console.warn('API error, using mock:', err);
-        setNomination(MOCK_NOMINATION_DETAIL);
+        console.error('Failed to load nomination:', err);
+        setError(err?.response?.data?.message || 'Failed to load nomination details.');
       } finally {
         setLoading(false);
       }
@@ -110,14 +66,7 @@ export default function NominationDetailPage() {
       setReviewModalOpen(false);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to submit review on server, updating locally');
-      setNomination((prev) => ({
-        ...prev,
-        status: reviewData.decision,
-        rejectionReason: reviewData.rejectionReason,
-        reviewDate: new Date().toISOString(),
-      }));
-      setReviewModalOpen(false);
+      toast.error(err?.response?.data?.message || 'Failed to submit review.');
     } finally {
       setSubmittingReview(false);
     }
@@ -129,9 +78,8 @@ export default function NominationDetailPage() {
       await nominationApi.withdraw(id);
       toast.success('Nomination withdrawn');
       setNomination((prev) => ({ ...prev, status: 'WITHDRAWN' }));
-    } catch {
-      toast.success('Nomination withdrawn (local)');
-      setNomination((prev) => ({ ...prev, status: 'WITHDRAWN' }));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to withdraw nomination.');
     }
   };
 
@@ -169,14 +117,14 @@ export default function NominationDetailPage() {
 
   if (loading) return <Loader text="Loading nomination details..." />;
 
-  if (!nomination) {
+  if (error || !nomination) {
     return (
-      <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-        <h2>Nomination Not Found</h2>
-        <Button variant="secondary" onClick={() => navigate('/nominations')}>
-          Back to Nominations
-        </Button>
-      </div>
+      <EmptyState
+        icon={HiOutlineExclamation}
+        title={error ? 'Something went wrong' : 'Nomination Not Found'}
+        message={error || 'The nomination you are looking for does not exist or may have been removed.'}
+        action={<Button variant="secondary" onClick={() => navigate('/nominations')}>Back to Nominations</Button>}
+      />
     );
   }
 

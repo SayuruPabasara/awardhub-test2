@@ -6,6 +6,8 @@ import com.awardhub.awardhub.category.repository.AwardCategoryRepository;
 import com.awardhub.awardhub.common.audit.AuditLogService;
 import com.awardhub.awardhub.common.exception.BadRequestException;
 import com.awardhub.awardhub.common.exception.ResourceNotFoundException;
+import com.awardhub.awardhub.evaluation.entity.Evaluation;
+import com.awardhub.awardhub.evaluation.repository.EvaluationRepository;
 import com.awardhub.awardhub.nomination.dto.DocumentResponse;
 import com.awardhub.awardhub.nomination.dto.NominationRequest;
 import com.awardhub.awardhub.nomination.dto.NominationResponse;
@@ -18,6 +20,7 @@ import com.awardhub.awardhub.nomination.repository.DocumentRepository;
 import com.awardhub.awardhub.nomination.repository.NominationRepository;
 import com.awardhub.awardhub.user.entity.Nominee;
 import com.awardhub.awardhub.user.entity.User;
+import com.awardhub.awardhub.user.entity.UserRole;
 import com.awardhub.awardhub.user.repository.NomineeRepository;
 import com.awardhub.awardhub.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,7 @@ public class NominationService {
     private final NomineeRepository nomineeRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
+    private final EvaluationRepository evaluationRepository;
 
     private static final String UPLOAD_DIR = "uploads/nominations";
 
@@ -52,7 +56,8 @@ public class NominationService {
             AwardCategoryRepository categoryRepository,
             NomineeRepository nomineeRepository,
             UserRepository userRepository,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            EvaluationRepository evaluationRepository
     ) {
         this.nominationRepository = nominationRepository;
         this.documentRepository = documentRepository;
@@ -60,6 +65,7 @@ public class NominationService {
         this.nomineeRepository = nomineeRepository;
         this.userRepository = userRepository;
         this.auditLogService = auditLogService;
+        this.evaluationRepository = evaluationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -255,6 +261,12 @@ public class NominationService {
         nom.setRejectionReason(req.getRejectionReason());
 
         Nomination reviewed = nominationRepository.save(nom);
+
+        // Auto-assign judges to approved nominations
+        if (req.getDecision() == NominationStatus.APPROVED) {
+            assignEvaluatorsToNomination(reviewed.getNominationId(), reviewed.getCategory().getCategoryId(), reviewerUserId);
+        }
+
         auditLogService.log(
                 reviewerUserId,
                 "REVIEW_NOMINATION",
@@ -263,6 +275,39 @@ public class NominationService {
                 "Reviewed nomination: " + reviewed.getTitle() + " -> " + req.getDecision()
         );
         return NominationResponse.fromEntity(reviewed);
+    }
+
+    @Transactional
+    public void assignEvaluatorsToNomination(Long nominationId, Long categoryId, Long organizerUserId) {
+        Nomination nomination = nominationRepository.findById(nominationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Nomination not found with id: " + nominationId));
+
+        // Get all active judges who haven't already evaluated this nomination
+        List<com.awardhub.awardhub.user.entity.Judge> judges = userRepository.findByRole(UserRole.JUDGE).stream()
+                .filter(u -> u instanceof com.awardhub.awardhub.user.entity.Judge)
+                .map(u -> (com.awardhub.awardhub.user.entity.Judge) u)
+                .collect(Collectors.toList());
+
+        for (com.awardhub.awardhub.user.entity.Judge judge : judges) {
+            // Check if evaluation already exists
+            if (evaluationRepository.findByNominationId(nominationId).stream()
+                    .anyMatch(e -> e.getJudge().getUserID().equals(judge.getUserID()))) {
+                continue; // Skip already assigned judges
+            }
+
+            Evaluation evaluation = new Evaluation();
+            evaluation.setNomination(nomination);
+            evaluation.setJudge(judge);
+            evaluation.setCategory(nomination.getCategory());
+            evaluation.setStatus("PENDING");
+            evaluation.setCriterionScores("{}");
+            evaluation.setSubmissionDate(LocalDateTime.now());
+
+            evaluationRepository.save(evaluation);
+        }
+
+        auditLogService.log(organizerUserId, "ASSIGN_EVALUATORS", "Nomination", nominationId, 
+                           "Assigned judges for nomination: " + nomination.getTitle());
     }
 
     @Transactional

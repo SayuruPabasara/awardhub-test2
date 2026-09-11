@@ -4,18 +4,18 @@ import com.awardhub.awardhub.common.audit.AuditLogService;
 import com.awardhub.awardhub.common.exception.ResourceNotFoundException;
 import com.awardhub.awardhub.profile.dto.NomineeProfileResponse;
 import com.awardhub.awardhub.profile.dto.UpdateNomineeProfileRequest;
+import com.awardhub.awardhub.profile.repository.NomineeProfileRepository;
 import com.awardhub.awardhub.user.entity.Nominee;
-import com.awardhub.awardhub.user.repository.NomineeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NomineeProfileService {
 
-    private final NomineeRepository nomineeRepository;
+    private final NomineeProfileRepository nomineeRepository;
     private final AuditLogService auditLogService;
 
-    public NomineeProfileService(NomineeRepository nomineeRepository, AuditLogService auditLogService) {
+    public NomineeProfileService(NomineeProfileRepository nomineeRepository, AuditLogService auditLogService) {
         this.nomineeRepository = nomineeRepository;
         this.auditLogService = auditLogService;
     }

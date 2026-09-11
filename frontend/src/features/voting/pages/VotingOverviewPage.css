@@ -1,0 +1,84 @@
+.voting-overview-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.vo-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.vo-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vo-category-card {
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+.vo-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--slate-100);
+  margin-bottom: var(--space-4);
+}
+
+.vo-card-header h3 {
+  margin: 0;
+  font-size: var(--font-lg);
+  color: var(--slate-900);
+}
+
+.vo-card-header p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-xs);
+  color: var(--slate-500);
+  max-width: 500px;
+}
+
+.vo-card-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+}
+
+.vo-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vo-metric-label {
+  font-size: var(--font-xs);
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vo-metric-value {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--slate-900);
+}
+
+@media (max-width: 640px) {
+  .vo-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .vo-card-body {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -17,25 +17,8 @@ import Card from '../../../components/Card';
 import Input from '../../../components/Input';
 import Button from '../../../components/Button';
 import Loader from '../../../components/Loader';
+import EmptyState from '../../../components/EmptyState';
 import './NomineeProfilePage.css';
-
-const DEFAULT_PROFILE = {
-  nicPassport: '951234567V',
-  dateOfBirth: '1995-04-12',
-  gender: 'Female',
-  contactNumber: '+94 77 123 4567',
-  street: '42 Science Innovation Way',
-  city: 'Colombo',
-  state: 'Western Province',
-  zip: '00700',
-  organization: 'Institute of Robotics & Applied AI',
-  jobTitle: 'Lead Research Scientist',
-  biography:
-    'Dedicated researcher and technologist specializing in autonomous aerial systems, edge compute, and disaster response robotics. Passionate about empowering developing communities through applied STEM innovation.',
-  education: 'Ph.D. in Robotics — SLIIT (2024)\nB.Sc. (Hons) in Software Engineering (First Class) — SLIIT (2019)',
-  achievements: '• Best Technical Paper Award (IEEE 2025)\n• National Youth Innovation Fellowship\n• 3 Patents in Autonomous Sensor Systems',
-  references: 'Prof. Ananda Silva (Dean of Computing, SLIIT) — a.silva@sliit.lk\nDr. Maya Perera (Director of R&D, TechLabs) — maya@techlabs.io',
-};
 
 const TABS = [
   { id: 'OVERVIEW', label: 'Biography & Overview' },
@@ -47,20 +30,21 @@ const TABS = [
 export default function NomineeProfilePage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('OVERVIEW');
-  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [profile, setProfile] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
+        setError(null);
         const res = await profileApi.getMyProfile();
-        if (res?.data?.data) {
-          setProfile((prev) => ({ ...prev, ...res.data.data }));
-        }
+        setProfile(res?.data?.data || {});
       } catch (err) {
-        console.warn('API error, using demo profile:', err);
+        console.error(err);
+        setError('Failed to load your profile. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -81,7 +65,7 @@ export default function NomineeProfilePage() {
       toast.success('Profile updated successfully!');
     } catch (err) {
       console.error(err);
-      toast.success('Profile updated locally (demo mode)!');
+      toast.error(err?.response?.data?.message || 'Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -107,6 +91,17 @@ export default function NomineeProfilePage() {
   };
 
   if (loading) return <Loader text="Loading your profile..." />;
+
+  if (error) {
+    return (
+      <EmptyState
+        icon={HiOutlineUser}
+        title="Could not load profile"
+        message={error}
+        action={<Button onClick={() => window.location.reload()}>Retry</Button>}
+      />
+    );
+  }
 
   const completionPct = calculateCompletion();
 
