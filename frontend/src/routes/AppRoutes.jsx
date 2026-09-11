@@ -19,15 +19,19 @@ import UserManagementPage from '../features/users/pages/UserManagementPage';
 import ReportsPage from '../features/reports/pages/ReportsPage';
 import AuditLogPage from '../features/reports/pages/AuditLogPage';
 import VotingOverviewPage from '../features/voting/pages/VotingOverviewPage';
+import LandingPage from '../features/landing/pages/LandingPage';
 
 /**
  * All application routes.
- * Public routes: login, register, OTP verify.
+ * Public routes: landing, login, register, OTP verify.
  * Protected routes: nested inside Layout with ProtectedRoute guards.
  */
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Public landing page */}
+      <Route path="/" element={<LandingPage />} />
+
       {/* Public auth routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -75,9 +79,8 @@ export default function AppRoutes() {
         <Route path="/system" element={<PlaceholderPage title="System Settings" />} />
       </Route>
 
-      {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Default redirect — unknown routes go to landing page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
