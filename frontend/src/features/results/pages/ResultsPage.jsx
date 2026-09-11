@@ -1,75 +1,110 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
+import { categoryApi } from '../../categories/api';
+import { resultsApi } from '../api';
 import Button from '../../../components/Button';
 import Card from '../../../components/Card';
 import Loader from '../../../components/Loader';
-import { HiOutlineChartBar, HiOutlineTrendingUp, HiOutlineStar } from 'react-icons/hi';
+import EmptyState from '../../../components/EmptyState';
+import { HiOutlineChartBar, HiOutlineTrendingUp, HiOutlineStar, HiOutlineInbox } from 'react-icons/hi';
 import './ResultsPage.css';
-
-const DEMO_RESULTS = [
-  {
-    categoryId: 1,
-    categoryName: 'Outstanding Research Innovation',
-    winner: 'Dr. Sarah Chen',
-    winning_score: 92.5,
-    nominees: [
-      { name: 'Dr. Sarah Chen', vote_score: 88, judge_score: 96, final_score: 92.5 },
-      { name: 'Prof. Daniel Moyo', vote_score: 85, judge_score: 91, final_score: 88.5 },
-      { name: 'Aisha Rahman', vote_score: 87, judge_score: 93, final_score: 90.5 },
-    ],
-    published: true,
-  },
-  {
-    categoryId: 2,
-    categoryName: 'Community Impact & Leadership',
-    winner: 'James Rodriguez',
-    winning_score: 95.0,
-    nominees: [
-      { name: 'James Rodriguez', vote_score: 95, judge_score: 95, final_score: 95.0 },
-      { name: 'Nimal Perera', vote_score: 89, judge_score: 89, final_score: 89.0 },
-      { name: 'Tariq Bell', vote_score: 91, judge_score: 91, final_score: 91.0 },
-    ],
-    published: true,
-  },
-  {
-    categoryId: 3,
-    categoryName: 'Technology Innovation of the Year',
-    winner: null,
-    winning_score: 0,
-    nominees: [
-      { name: 'Aisha Patel', vote_score: 90, judge_score: 98, final_score: 94.0 },
-      { name: 'Leo Martins', vote_score: 82, judge_score: 92, final_score: 87.5 },
-      { name: 'Priya Nair', vote_score: 88, judge_score: 92, final_score: 90.0 },
-    ],
-    published: false,
-  },
-];
 
 export default function ResultsPage() {
   const { user } = useAuth();
-  const [results, setResults] = useState(DEMO_RESULTS);
-  const [loading, setLoading] = useState(false);
-  const isOrganizerOrAdmin = user?.role === 'AWARD_ORGANIZER' || user?.role === 'SYSTEM_ADMINISTRATOR';
+  const [categories, setCategories] = useState([]);
+  const [resultsByCategory, setResultsByCategory] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [publishingId, setPublishingId] = useState(null);
 
-  const handlePublish = async (categoryId) => {
+  const isOrganizerOrAdmin =
+    user?.role === 'AWARD_ORGANIZER' || user?.role === 'SYSTEM_ADMINISTRATOR';
+
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      // Demo: just update local state
-      setResults((prev) =>
-        prev.map((r) => (r.categoryId === categoryId ? { ...r, published: true } : r))
+      setError(null);
+
+      const catRes = await categoryApi.getAll();
+      const cats = catRes.data?.data || [];
+      setCategories(cats);
+
+      const resultsMap = {};
+      await Promise.all(
+        cats.map(async (cat) => {
+          try {
+            const res = await resultsApi.getResultsByCategory(cat.categoryId);
+            resultsMap[cat.categoryId] = res.data?.data || [];
+          } catch {
+            resultsMap[cat.categoryId] = [];
+          }
+        })
       );
-      toast.success('Results published for this category!');
+      setResultsByCategory(resultsMap);
     } catch (err) {
       console.error(err);
-      toast.error('Could not publish results');
+      setError('Failed to load results. Please try again.');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handlePublish = async (categoryId) => {
+    try {
+      setPublishingId(categoryId);
+      await resultsApi.publishResults(categoryId);
+      toast.success('Results calculated and published!');
+      const res = await resultsApi.getResultsByCategory(categoryId);
+      setResultsByCategory((prev) => ({ ...prev, [categoryId]: res.data?.data || [] }));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Could not publish results');
+    } finally {
+      setPublishingId(null);
+    }
   };
 
-  const totalCategories = results.length;
-  const publishedCategories = results.filter((r) => r.published).length;
+  const publishedCount = Object.values(resultsByCategory).filter((r) => r.length > 0).length;
+  const winnersCount = Object.values(resultsByCategory).reduce(
+    (acc, list) => acc + list.filter((r) => r.isWinner).length,
+    0
+  );
+
+  if (loading) {
+    return (
+      <div className="results-page">
+        <Loader />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="results-page">
+        <EmptyState
+          icon={HiOutlineChartBar}
+          title="Could not load results"
+          message={error}
+          action={<Button onClick={loadData}>Retry</Button>}
+        />
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div className="results-page">
+        <EmptyState
+          title="No categories yet"
+          message="Award categories must be created before results can be calculated."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="results-page">
@@ -84,81 +119,105 @@ export default function ResultsPage() {
         <div className="results-summary-card">
           <div className="results-summary-icon"><HiOutlineChartBar size={22} /></div>
           <div>
-            <div className="results-summary-value">{totalCategories}</div>
+            <div className="results-summary-value">{categories.length}</div>
             <div className="results-summary-label">Total Categories</div>
           </div>
         </div>
         <div className="results-summary-card">
           <div className="results-summary-icon"><HiOutlineStar size={22} /></div>
           <div>
-            <div className="results-summary-value">
-              {results.filter((r) => r.winner).length}
-            </div>
+            <div className="results-summary-value">{winnersCount}</div>
             <div className="results-summary-label">Winners Announced</div>
           </div>
         </div>
         <div className="results-summary-card">
           <div className="results-summary-icon"><HiOutlineTrendingUp size={22} /></div>
           <div>
-            <div className="results-summary-value">{publishedCategories}</div>
+            <div className="results-summary-value">{publishedCount}</div>
             <div className="results-summary-label">Published</div>
           </div>
         </div>
       </div>
 
       <div className="results-list">
-        {results.map((category) => (
-          <Card key={category.categoryId} className="results-card">
-            <div className="results-card-header">
-              <div>
-                <h2>{category.categoryName}</h2>
-                <p>{category.nominees.length} nominees evaluated</p>
-              </div>
-              {isOrganizerOrAdmin && (
-                <Button
-                  variant={category.published ? 'secondary' : 'primary'}
-                  size="sm"
-                  onClick={() => handlePublish(category.categoryId)}
-                  disabled={category.published}
-                >
-                  {category.published ? 'Published' : 'Publish Results'}
-                </Button>
-              )}
-            </div>
+        {categories.map((category) => {
+          const scores = (resultsByCategory[category.categoryId] || [])
+            .slice()
+            .sort((a, b) => (b.finalScore || 0) - (a.finalScore || 0));
+          const winner = scores.find((s) => s.isWinner) || null;
+          const isPublished = scores.length > 0;
 
-            {category.winner && (
-              <div className="winner-banner">
-                <div className="winner-badge">🏆</div>
-                <div className="winner-text">
-                  <strong>Winner</strong>
-                  <h3>{category.winner}</h3>
-                  <span>{category.winning_score.toFixed(1)} points</span>
+          return (
+            <Card key={category.categoryId} className="results-card">
+              <div className="results-card-header">
+                <div>
+                  <h2>{category.categoryName}</h2>
+                  <p>
+                    {isPublished
+                      ? `${scores.length} nominee${scores.length !== 1 ? 's' : ''} evaluated`
+                      : 'Results not yet calculated'}
+                  </p>
                 </div>
+                {isOrganizerOrAdmin && (
+                  <Button
+                    variant={isPublished ? 'secondary' : 'primary'}
+                    size="sm"
+                    onClick={() => handlePublish(category.categoryId)}
+                    disabled={publishingId === category.categoryId}
+                  >
+                    {publishingId === category.categoryId
+                      ? 'Publishing…'
+                      : isPublished
+                        ? 'Recalculate'
+                        : 'Publish Results'}
+                  </Button>
+                )}
               </div>
-            )}
 
-            <div className="nominees-scores">
-              {category.nominees
-                .sort((a, b) => b.final_score - a.final_score)
-                .map((nominee, idx) => (
-                  <div key={idx} className="nominee-score-row">
-                    <div className="score-rank">#{idx + 1}</div>
-                    <div className="score-info">
-                      <strong>{nominee.name}</strong>
-                      <div className="score-breakdown">
-                        <span>Votes: {nominee.vote_score}</span>
-                        <span>Judges: {nominee.judge_score}</span>
+              {winner && (
+                <div className="winner-banner">
+                  <div className="winner-badge">🏆</div>
+                  <div className="winner-text">
+                    <strong>Winner</strong>
+                    <h3>{winner.nomineeName}</h3>
+                    <span>{(winner.finalScore ?? 0).toFixed(1)} points</span>
+                  </div>
+                </div>
+              )}
+
+              {isPublished ? (
+                <div className="nominees-scores">
+                  {scores.map((nominee) => (
+                    <div key={nominee.scoreId || nominee.nomineeId} className="nominee-score-row">
+                      <div className="score-rank">#{nominee.rank || '—'}</div>
+                      <div className="score-info">
+                        <strong>{nominee.nomineeName}</strong>
+                        <div className="score-breakdown">
+                          <span>Votes: {nominee.totalVotes ?? 0}</span>
+                          <span>Judges: {nominee.totalEvaluations ?? 0}</span>
+                        </div>
+                      </div>
+                      <div className="score-value">
+                        <strong>{(nominee.finalScore ?? 0).toFixed(1)}</strong>
+                        <span>/100</span>
                       </div>
                     </div>
-                    <div className="score-value">
-                      <strong>{nominee.final_score.toFixed(1)}</strong>
-                      <span>/100</span>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </Card>
-        ))}
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={HiOutlineInbox}
+                  title="No results yet"
+                  message={
+                    isOrganizerOrAdmin
+                      ? 'Click "Publish Results" to calculate final scores from votes and evaluations.'
+                      : 'Results for this category have not been published yet.'
+                  }
+                />
+              )}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

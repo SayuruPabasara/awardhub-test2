@@ -3,11 +3,14 @@ package com.awardhub.awardhub.reports.service;
 import com.awardhub.awardhub.category.repository.AwardCategoryRepository;
 import com.awardhub.awardhub.common.audit.AuditLog;
 import com.awardhub.awardhub.common.audit.AuditLogRepository;
+import com.awardhub.awardhub.common.exception.ResourceNotFoundException;
 import com.awardhub.awardhub.evaluation.repository.EvaluationRepository;
+import com.awardhub.awardhub.nomination.entity.NominationStatus;
 import com.awardhub.awardhub.nomination.repository.NominationRepository;
 import com.awardhub.awardhub.reports.dto.AuditLogDTO;
 import com.awardhub.awardhub.reports.dto.CategoryStatisticsDTO;
 import com.awardhub.awardhub.user.repository.UserRepository;
+import com.awardhub.awardhub.voting.entity.VoteStatus;
 import com.awardhub.awardhub.voting.repository.VoteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,26 +44,25 @@ public class ReportsService {
 
     public CategoryStatisticsDTO getCategoryStatistics(Long categoryId) {
         var category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Award category not found with id: " + categoryId));
 
-        long totalNominations = nominationRepository.findByCategoryId(categoryId).size();
-        long approvedNominations = nominationRepository.findApprovedByCategoryId(categoryId).size();
-        long rejectedNominations = nominationRepository.findByCategoryId(categoryId).stream()
-                .filter(n -> "REJECTED".equals(n.getStatus().toString()))
-                .count();
-        long totalVotes = voteRepository.findByCategoryId(categoryId).size();
-        long totalEvaluators = evaluationRepository.findAll().stream()
-                .filter(e -> e.getCategory().getCategoryId().equals(categoryId))
+        long totalNominations = nominationRepository.countByCategoryCategoryId(categoryId);
+        long approvedNominations = nominationRepository.countByCategoryCategoryIdAndStatus(categoryId, NominationStatus.APPROVED);
+        long rejectedNominations = nominationRepository.countByCategoryCategoryIdAndStatus(categoryId, NominationStatus.REJECTED);
+        long totalVotes = voteRepository.countByCategoryCategoryIdAndStatus(categoryId, VoteStatus.VALID);
+
+        var evaluations = evaluationRepository.findByCategoryCategoryId(categoryId);
+        long totalEvaluators = evaluations.stream()
                 .map(e -> e.getJudge().getUserID())
                 .distinct()
                 .count();
 
-        double avgVoteScore = voteRepository.findByCategoryId(categoryId).stream()
-                .count() > 0 ? (double) totalVotes / 10 : 0.0;
+        // Average votes per approved nominee — a meaningful metric, not an arbitrary divisor
+        double avgVoteScore = approvedNominations > 0 ? (double) totalVotes / approvedNominations : 0.0;
 
-        double avgJudgeScore = evaluationRepository.findAll().stream()
-                .filter(e -> e.getCategory().getCategoryId().equals(categoryId) && "COMPLETED".equals(e.getStatus()))
-                .mapToDouble(e -> e.getTotalScore() != null ? e.getTotalScore() : 0.0)
+        double avgJudgeScore = evaluations.stream()
+                .filter(e -> "COMPLETED".equals(e.getStatus()) && e.getTotalScore() != null)
+                .mapToDouble(e -> e.getTotalScore())
                 .average()
                 .orElse(0.0);
 

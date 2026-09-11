@@ -15,6 +15,10 @@ import NomineeProfilePage from '../features/profile/pages/NomineeProfilePage';
 import VotePage from '../features/voting/pages/VotePage';
 import EvaluationPage from '../features/evaluations/pages/EvaluationPage';
 import ResultsPage from '../features/results/pages/ResultsPage';
+import UserManagementPage from '../features/users/pages/UserManagementPage';
+import ReportsPage from '../features/reports/pages/ReportsPage';
+import AuditLogPage from '../features/reports/pages/AuditLogPage';
+import VotingOverviewPage from '../features/voting/pages/VotingOverviewPage';
 
 /**
  * All application routes.
@@ -60,14 +64,14 @@ export default function AppRoutes() {
         <Route path="/my-evaluations" element={<EvaluationPage />} />
 
         {/* Organizer routes */}
-        <Route path="/voting-overview" element={<PlaceholderPage title="Voting Overview" />} />
+        <Route path="/voting-overview" element={<VotingOverviewPage />} />
         <Route path="/results" element={<ResultsPage />} />
-        <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/feedback" element={<PlaceholderPage title="Feedback" />} />
 
         {/* Admin routes */}
-        <Route path="/users" element={<PlaceholderPage title="User Management" />} />
-        <Route path="/audit-log" element={<PlaceholderPage title="Audit Log" />} />
+        <Route path="/users" element={<UserManagementPage />} />
+        <Route path="/audit-log" element={<AuditLogPage />} />
         <Route path="/system" element={<PlaceholderPage title="System Settings" />} />
       </Route>
 

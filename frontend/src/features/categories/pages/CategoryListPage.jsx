@@ -20,69 +20,6 @@ import Loader from '../../../components/Loader';
 import CategoryFormModal from '../components/CategoryFormModal';
 import './CategoryListPage.css';
 
-const DEFAULT_MOCK_CATEGORIES = [
-  {
-    categoryId: 1,
-    categoryName: 'Outstanding Research Innovation',
-    description: 'Recognizing groundbreaking research projects and publications contributing significantly to scientific progress.',
-    eligibilityCriteria: 'Full-time faculty, researchers, and graduate students with publications in 2025-2026.',
-    nominationDeadline: '2026-09-25T23:59:00',
-    votingStartDate: '2026-10-01T00:00:00',
-    votingEndDate: '2026-10-15T23:59:00',
-    evaluationMethod: 'HYBRID',
-    votingWeightage: 40,
-    judgingWeightage: 60,
-    maxVotesPerVoter: 1,
-    status: 'NOMINATIONS_OPEN',
-    requiredDocumentTypes: ['RESUME', 'PROJECT_REPORT', 'CERTIFICATES'],
-  },
-  {
-    categoryId: 2,
-    categoryName: 'Community Impact & Leadership',
-    description: 'Honoring exceptional initiatives addressing critical social needs, sustainability, or youth empowerment.',
-    eligibilityCriteria: 'Any registered student or alumni initiative operating for at least 6 months.',
-    nominationDeadline: '2026-09-15T23:59:00',
-    votingStartDate: '2026-09-18T00:00:00',
-    votingEndDate: '2026-09-30T23:59:00',
-    evaluationMethod: 'VOTING_ONLY',
-    votingWeightage: 100,
-    judgingWeightage: 0,
-    maxVotesPerVoter: 1,
-    status: 'VOTING_OPEN',
-    requiredDocumentTypes: ['RESUME', 'PORTFOLIO'],
-  },
-  {
-    categoryId: 3,
-    categoryName: 'Technology Innovation of the Year',
-    description: 'Celebrating high-impact software, hardware, or AI prototypes demonstrating technical mastery.',
-    eligibilityCriteria: 'Open to all engineering and computing student teams with a working prototype.',
-    nominationDeadline: '2026-09-10T23:59:00',
-    votingStartDate: '2026-09-12T00:00:00',
-    votingEndDate: '2026-09-22T23:59:00',
-    evaluationMethod: 'HYBRID',
-    votingWeightage: 50,
-    judgingWeightage: 50,
-    maxVotesPerVoter: 2,
-    status: 'UNDER_EVALUATION',
-    requiredDocumentTypes: ['PROJECT_REPORT', 'PORTFOLIO', 'RECOMMENDATION_LETTER'],
-  },
-  {
-    categoryId: 4,
-    categoryName: 'Excellence in Creative Arts & Media',
-    description: 'Acknowledging visionary work in digital design, filmmaking, writing, and multimedia storytelling.',
-    eligibilityCriteria: 'Individual or collaborative portfolios produced within the last academic cycle.',
-    nominationDeadline: '2026-10-10T23:59:00',
-    votingStartDate: '2026-10-15T00:00:00',
-    votingEndDate: '2026-10-25T23:59:00',
-    evaluationMethod: 'JUDGING_ONLY',
-    votingWeightage: 0,
-    judgingWeightage: 100,
-    maxVotesPerVoter: 1,
-    status: 'UPCOMING',
-    requiredDocumentTypes: ['PORTFOLIO', 'RESUME'],
-  },
-];
-
 const STATUS_FILTERS = [
   { id: 'ALL', label: 'All Categories' },
   { id: 'NOMINATIONS_OPEN', label: 'Nominations Open' },
@@ -116,14 +53,10 @@ export default function CategoryListPage() {
     try {
       setLoading(true);
       const res = await categoryApi.getAll(activeTab !== 'ALL' ? activeTab : null);
-      if (res?.data?.data && res.data.data.length > 0) {
-        setCategories(res.data.data);
-      } else {
-        setCategories(DEFAULT_MOCK_CATEGORIES);
-      }
+      setCategories(res?.data?.data || []);
     } catch (err) {
-      console.warn('API fetch failed, fallback to mock data:', err);
-      setCategories(DEFAULT_MOCK_CATEGORIES);
+      console.error(err);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -156,26 +89,7 @@ export default function CategoryListPage() {
       setIsModalOpen(false);
       fetchCategories();
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'Failed to save category');
-      // If offline/mock mode, update local state
-      if (editingCategory) {
-        setCategories((prev) =>
-          prev.map((c) =>
-            c.categoryId === editingCategory.categoryId ? { ...c, ...formData } : c
-          )
-        );
-        setIsModalOpen(false);
-        toast.success('Updated locally (demo mode)');
-      } else {
-        const newCat = {
-          ...formData,
-          categoryId: Date.now(),
-        };
-        setCategories((prev) => [newCat, ...prev]);
-        setIsModalOpen(false);
-        toast.success('Created locally (demo mode)');
-      }
+      toast.error(err?.response?.data?.message || 'Failed to save category');
     } finally {
       setIsSubmitting(false);
     }
@@ -188,9 +102,7 @@ export default function CategoryListPage() {
       toast.success('Category deleted');
       setCategories((prev) => prev.filter((c) => c.categoryId !== id));
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to delete on server, removing locally');
-      setCategories((prev) => prev.filter((c) => c.categoryId !== id));
+      toast.error(err?.response?.data?.message || 'Failed to delete category');
     }
   };
 
@@ -287,9 +199,8 @@ export default function CategoryListPage() {
       ) : filteredCategories.length === 0 ? (
         <EmptyState
           title="No categories found"
-          description="There are no categories matching your current filter or search criteria."
-          actionLabel={isOrganizerOrAdmin ? 'Create New Category' : null}
-          onAction={isOrganizerOrAdmin ? handleOpenCreateModal : null}
+          message="There are no categories matching your current filter or search criteria."
+          action={isOrganizerOrAdmin ? <Button variant="primary" icon={HiOutlinePlus} onClick={handleOpenCreateModal}>Create New Category</Button> : null}
         />
       ) : (
         <div className="category-grid">

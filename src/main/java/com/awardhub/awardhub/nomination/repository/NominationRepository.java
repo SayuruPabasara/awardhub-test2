@@ -26,6 +26,10 @@ public interface NominationRepository extends JpaRepository<Nomination, Long> {
 
     boolean existsByNomineeUserIDAndCategoryCategoryId(Long nomineeId, Long categoryId);
 
+    long countByCategoryCategoryId(Long categoryId);
+
+    long countByCategoryCategoryIdAndStatus(Long categoryId, NominationStatus status);
+
     @Query("SELECT n FROM Nomination n LEFT JOIN FETCH n.documents WHERE n.nominationId = :id")
     Optional<Nomination> findByIdWithDocuments(@Param("id") Long id);
 }

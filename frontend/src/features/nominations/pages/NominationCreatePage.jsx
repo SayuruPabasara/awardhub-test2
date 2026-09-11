@@ -40,38 +40,15 @@ export default function NominationCreatePage() {
       try {
         setLoadingCats(true);
         const res = await categoryApi.getOpenForNomination();
-        if (res?.data?.data && res.data.data.length > 0) {
-          setCategories(res.data.data);
-          if (preselectedCategoryId) {
-            const found = res.data.data.find(
-              (c) => c.categoryId.toString() === preselectedCategoryId.toString()
-            );
-            if (found) setSelectedCategory(found);
-          }
-        } else {
-          // Fallback mock open categories
-          const fallback = [
-            {
-              categoryId: 1,
-              categoryName: 'Outstanding Research Innovation',
-              requiredDocumentTypes: ['RESUME', 'PROJECT_REPORT', 'CERTIFICATES'],
-            },
-            {
-              categoryId: 2,
-              categoryName: 'Community Impact & Leadership',
-              requiredDocumentTypes: ['RESUME', 'PORTFOLIO'],
-            },
-          ];
-          setCategories(fallback);
-          if (preselectedCategoryId) {
-            const found = fallback.find(
-              (c) => c.categoryId.toString() === preselectedCategoryId.toString()
-            );
-            if (found) setSelectedCategory(found);
-          }
+        setCategories(res?.data?.data || []);
+        if (preselectedCategoryId) {
+          const found = (res?.data?.data || []).find(
+            (c) => c.categoryId.toString() === preselectedCategoryId.toString()
+          );
+          if (found) setSelectedCategory(found);
         }
       } catch (err) {
-        console.warn('Failed to load categories:', err);
+        console.error('Failed to load categories:', err);
       } finally {
         setLoadingCats(false);
       }
@@ -169,9 +146,7 @@ export default function NominationCreatePage() {
       navigate('/my-nominations');
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || 'Failed to submit nomination');
-      // In demo mode without active backend, navigate with success feedback
-      setTimeout(() => navigate('/my-nominations'), 1000);
+      toast.error(err.response?.data?.message || 'Failed to submit nomination. Please try again.');
     } finally {
       setSubmitting(false);
     }

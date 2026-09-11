@@ -1,5 +1,7 @@
 package com.awardhub.awardhub.security.otp;
 
+import com.awardhub.awardhub.security.entity.OtpCode;
+import com.awardhub.awardhub.security.repository.OtpCodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,13 +9,12 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
 /**
  * OTP generation and verification service.
- * Stores OTPs in-memory with expiry (sufficient for dev/single-instance).
- * In production, swap to Redis or a DB-backed store.
+ * OTPs are persisted in the database so they survive restarts and work
+ * across multiple server instances.
  */
 @Service
 @Slf4j
@@ -27,31 +28,34 @@ public class OtpService {
     private int otpLength;
 
     private final EmailService emailService;
+    private final OtpCodeRepository otpCodeRepository;
     private final SecureRandom random = new SecureRandom();
-
-    // In-memory OTP store: email → {otp, expiryTime}
-    private final Map<String, OtpEntry> otpStore = new ConcurrentHashMap<>();
 
     public void generateAndSend(String email) {
         String otp = generateOtp();
         LocalDateTime expiry = LocalDateTime.now().plusNanos(otpExpirationMs * 1_000_000);
-        otpStore.put(email, new OtpEntry(otp, expiry));
+
+        // Replace any existing OTP for this email
+        otpCodeRepository.deleteByEmail(email);
+        otpCodeRepository.save(new OtpCode(email, otp, expiry));
 
         emailService.sendOtpEmail(email, otp);
         log.info("OTP generated for email: {}", email);
     }
 
     public boolean verify(String email, String otp) {
-        OtpEntry entry = otpStore.get(email);
-        if (entry == null) {
+        Optional<OtpCode> existing = otpCodeRepository.findByEmail(email);
+        if (existing.isEmpty()) {
             return false;
         }
-        if (LocalDateTime.now().isAfter(entry.expiry())) {
-            otpStore.remove(email);
+
+        OtpCode entry = existing.get();
+        if (LocalDateTime.now().isAfter(entry.getExpiryTime())) {
+            otpCodeRepository.delete(entry);
             return false;
         }
-        if (entry.otp().equals(otp)) {
-            otpStore.remove(email);
+        if (entry.getCode().equals(otp)) {
+            otpCodeRepository.delete(entry);
             return true;
         }
         return false;
@@ -64,6 +68,4 @@ public class OtpService {
         }
         return sb.toString();
     }
-
-    private record OtpEntry(String otp, LocalDateTime expiry) {}
 }

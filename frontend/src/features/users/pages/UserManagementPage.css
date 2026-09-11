@@ -1,0 +1,143 @@
+.user-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.um-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.um-tabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--slate-100);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  overflow-x: auto;
+}
+
+.um-tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--slate-600);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.um-tab-btn:hover {
+  color: var(--slate-900);
+}
+
+.um-tab-btn.active {
+  background: #fff;
+  color: var(--primary-700);
+  box-shadow: var(--shadow-sm);
+}
+
+.um-search {
+  position: relative;
+  min-width: 240px;
+}
+
+.um-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate-400);
+}
+
+.um-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
+  background: #fff;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.um-search-input:focus {
+  border-color: var(--primary-400);
+}
+
+.um-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.um-role-cell {
+  font-weight: 500;
+  color: var(--slate-700);
+}
+
+.um-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.um-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.um-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.um-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--slate-700);
+}
+
+.um-input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
+  background: #fff;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.um-input:focus {
+  border-color: var(--primary-400);
+}
+
+.um-input:disabled {
+  background: var(--slate-50);
+  color: var(--slate-500);
+}
+
+@media (max-width: 640px) {
+  .um-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .um-search {
+    min-width: 100%;
+  }
+
+  .um-form-row {
+    grid-template-columns: 1fr;
+  }
+}

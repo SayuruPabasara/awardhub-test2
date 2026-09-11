@@ -16,27 +16,9 @@ import Button from '../../../components/Button';
 import Card from '../../../components/Card';
 import Badge from '../../../components/Badge';
 import Loader from '../../../components/Loader';
+import EmptyState from '../../../components/EmptyState';
 import CategoryFormModal from '../components/CategoryFormModal';
 import './CategoryDetailPage.css';
-
-const MOCK_DETAIL = {
-  categoryId: 1,
-  categoryName: 'Outstanding Research Innovation',
-  description:
-    'Recognizing groundbreaking research projects and publications contributing significantly to scientific progress, technology transfer, or scholarly knowledge.',
-  eligibilityCriteria:
-    '1. Open to full-time faculty, researchers, graduate students, or affiliated university research groups.\n2. Projects or published papers must have been developed or completed within the academic cycle (2025–2026).\n3. Must include verified documentation of findings and formal institutional endorsement.',
-  nominationDeadline: '2026-09-25T23:59:00',
-  votingStartDate: '2026-10-01T00:00:00',
-  votingEndDate: '2026-10-15T23:59:00',
-  evaluationMethod: 'HYBRID',
-  votingWeightage: 40,
-  judgingWeightage: 60,
-  maxVotesPerVoter: 1,
-  status: 'NOMINATIONS_OPEN',
-  requiredDocumentTypes: ['RESUME', 'PROJECT_REPORT', 'CERTIFICATES'],
-  createdAt: '2026-08-15T10:00:00',
-};
 
 export default function CategoryDetailPage() {
   const { id } = useParams();
@@ -50,6 +32,7 @@ export default function CategoryDetailPage() {
 
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,15 +40,12 @@ export default function CategoryDetailPage() {
     const fetchDetail = async () => {
       try {
         setLoading(true);
+        setError(null);
         const res = await categoryApi.getById(id);
-        if (res?.data?.data) {
-          setCategory(res.data.data);
-        } else {
-          setCategory(MOCK_DETAIL);
-        }
+        setCategory(res?.data?.data || null);
       } catch (err) {
-        console.warn('Failed to load category, using mock:', err);
-        setCategory(MOCK_DETAIL);
+        console.error('Failed to load category:', err);
+        setError(err?.response?.data?.message || 'Failed to load category details.');
       } finally {
         setLoading(false);
       }
@@ -82,9 +62,7 @@ export default function CategoryDetailPage() {
       setIsEditModalOpen(false);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to update on server, updating locally');
-      setCategory((prev) => ({ ...prev, ...formData }));
-      setIsEditModalOpen(false);
+      toast.error(err?.response?.data?.message || 'Failed to update category.');
     } finally {
       setIsSubmitting(false);
     }
@@ -109,14 +87,14 @@ export default function CategoryDetailPage() {
     return <Loader text="Loading category details..." />;
   }
 
-  if (!category) {
+  if (error || !category) {
     return (
-      <div style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-        <h2>Category Not Found</h2>
-        <Button variant="secondary" onClick={() => navigate('/categories')} style={{ marginTop: '16px' }}>
-          Back to Categories
-        </Button>
-      </div>
+      <EmptyState
+        icon={HiOutlineDocumentText}
+        title={error ? 'Something went wrong' : 'Category Not Found'}
+        message={error || 'The category you are looking for does not exist or may have been removed.'}
+        action={<Button variant="secondary" onClick={() => navigate('/categories')}>Back to Categories</Button>}
+      />
     );
   }
 

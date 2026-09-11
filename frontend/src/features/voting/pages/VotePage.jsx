@@ -1,51 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { HiOutlineCheckCircle, HiOutlineClock, HiOutlineThumbUp, HiOutlineUserGroup } from 'react-icons/hi';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { HiOutlineCheckCircle, HiOutlineClock, HiOutlineThumbUp, HiOutlineUserGroup, HiOutlineInbox } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../context/AuthContext';
 import { votingApi } from '../api';
 import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
 import Loader from '../../../components/Loader';
+import EmptyState from '../../../components/EmptyState';
 import './VotePage.css';
-
-const DEFAULT_VOTING_DATA = [
-  {
-    categoryId: 1,
-    categoryName: 'Outstanding Research Innovation',
-    description: 'Recognizing bold scientific ideas and measurable impact in research, design, and innovation.',
-    votingEndDate: '2026-09-25T23:59:00',
-    maxVotesPerVoter: 1,
-    nominees: [
-      { nomineeId: 101, name: 'Dr. Sarah Chen', organization: 'Global Research Institute', score: 92 },
-      { nomineeId: 102, name: 'Prof. Daniel Moyo', organization: 'Urban Systems Lab', score: 88 },
-      { nomineeId: 103, name: 'Aisha Rahman', organization: 'Future Compute Society', score: 90 },
-    ],
-  },
-  {
-    categoryId: 2,
-    categoryName: 'Community Impact & Leadership',
-    description: 'Celebrating leadership that creates practical, measurable benefits for communities and social change.',
-    votingEndDate: '2026-09-30T23:59:00',
-    maxVotesPerVoter: 1,
-    nominees: [
-      { nomineeId: 201, name: 'James Rodriguez', organization: 'EcoAid Collective', score: 95 },
-      { nomineeId: 202, name: 'Nimal Perera', organization: 'Civic Futures Network', score: 89 },
-      { nomineeId: 203, name: 'Tariq Bell', organization: 'Youth Pathways Fund', score: 91 },
-    ],
-  },
-  {
-    categoryId: 3,
-    categoryName: 'Technology Innovation of the Year',
-    description: 'Honoring standout technology products and digital solutions that solve real-world problems.',
-    votingEndDate: '2026-10-05T23:59:00',
-    maxVotesPerVoter: 1,
-    nominees: [
-      { nomineeId: 301, name: 'Aisha Patel', organization: 'TechLabs Studio', score: 94 },
-      { nomineeId: 302, name: 'Leo Martins', organization: 'BluePeak Systems', score: 87 },
-      { nomineeId: 303, name: 'Priya Nair', organization: 'SignalForge', score: 90 },
-    ],
-  },
-];
 
 export default function VotePage() {
   const { user } = useAuth();
@@ -53,24 +15,55 @@ export default function VotePage() {
   const [selectedVotes, setSelectedVotes] = useState({});
   const [submittedVotes, setSubmittedVotes] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const catRes = await votingApi.getOpenCategories();
+      const cats = catRes.data?.data || [];
+
+      // Fetch approved nominees for each open category
+      const categoriesWithNominees = await Promise.all(
+        cats.map(async (cat) => {
+          try {
+            const nomineeRes = await votingApi.getApprovedNominees(cat.categoryId);
+            return { ...cat, nominees: nomineeRes.data?.data || [] };
+          } catch {
+            return { ...cat, nominees: [] };
+          }
+        })
+      );
+
+      // Fetch the voter's previously submitted votes to mark completed categories
+      const votedMap = {};
+      try {
+        const myVotesRes = await votingApi.getMyVotes();
+        const myVotes = myVotesRes.data?.data || [];
+        for (const vote of myVotes) {
+          if (vote.categoryId) {
+            votedMap[vote.categoryId] = vote.nomineeId;
+          }
+        }
+      } catch {
+        // Non-critical — continue without vote history
+      }
+
+      setCategories(categoriesWithNominees);
+      setSubmittedVotes(votedMap);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load voting categories. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        const res = await votingApi.getOpenCategories();
-        const data = res?.data?.data?.length ? res.data.data : DEFAULT_VOTING_DATA;
-        setCategories(data);
-      } catch (err) {
-        console.warn('Vote API unavailable, using demo data.', err);
-        setCategories(DEFAULT_VOTING_DATA);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    loadData();
+  }, [loadData]);
 
   const totalSelections = Object.keys(selectedVotes).length;
   const totalSubmitted = Object.keys(submittedVotes).length;
@@ -112,15 +105,13 @@ export default function VotePage() {
       await votingApi.submitVote({
         categoryId: category.categoryId,
         nomineeId,
-        voterId: user?.userId || 1,
       });
 
       setSubmittedVotes((prev) => ({ ...prev, [category.categoryId]: nomineeId }));
       toast.success(`Vote submitted for ${category.categoryName}`);
     } catch (err) {
-      console.warn('Server vote submission unavailable; saved locally for demo.', err);
-      setSubmittedVotes((prev) => ({ ...prev, [category.categoryId]: nomineeId }));
-      toast.success(`Demo vote saved for ${category.categoryName}`);
+      const msg = err?.response?.data?.message || 'Could not submit your vote. Please try again.';
+      toast.error(msg);
     }
   };
 
@@ -134,6 +125,19 @@ export default function VotePage() {
   };
 
   if (loading) return <Loader text="Loading voting categories..." />;
+
+  if (error) {
+    return (
+      <div className="vote-page">
+        <EmptyState
+          icon={HiOutlineUserGroup}
+          title="Could not load voting"
+          message={error}
+          action={<Button onClick={loadData}>Retry</Button>}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="vote-page">
@@ -158,77 +162,91 @@ export default function VotePage() {
         ))}
       </div>
 
-      <div className="vote-list">
-        {categories.map((category) => {
-          const selectedId = selectedVotes[category.categoryId];
-          const alreadySubmitted = !!submittedVotes[category.categoryId];
+      {categories.length === 0 ? (
+        <EmptyState
+          icon={HiOutlineInbox}
+          title="No categories open for voting"
+          message="There are no award categories open for voting at this time. Please check back later."
+        />
+      ) : (
+        <div className="vote-list">
+          {categories.map((category) => {
+            const selectedId = selectedVotes[category.categoryId];
+            const alreadySubmitted = !!submittedVotes[category.categoryId];
 
-          return (
-            <div key={category.categoryId} className="vote-card">
-              <div className="vote-card-header">
-                <div>
-                  <h2>{category.categoryName}</h2>
-                  <p>{category.description}</p>
+            return (
+              <div key={category.categoryId} className="vote-card">
+                <div className="vote-card-header">
+                  <div>
+                    <h2>{category.categoryName}</h2>
+                    <p>{category.description}</p>
+                  </div>
+                  <Badge variant={alreadySubmitted ? 'success' : 'primary'}>
+                    {alreadySubmitted ? 'Voted' : 'Open for Voting'}
+                  </Badge>
                 </div>
-                <Badge variant={alreadySubmitted ? 'success' : 'primary'}>
-                  {alreadySubmitted ? 'Voted' : 'Open for Voting'}
-                </Badge>
-              </div>
 
-              <div className="vote-card-meta">
-                <span>
-                  <HiOutlineClock size={15} />
-                  Closes {formatDate(category.votingEndDate)}
-                </span>
-                <span>Max votes per voter: {category.maxVotesPerVoter}</span>
-              </div>
+                <div className="vote-card-meta">
+                  <span>
+                    <HiOutlineClock size={15} />
+                    Closes {formatDate(category.votingEndDate)}
+                  </span>
+                  <span>Max votes per voter: {category.maxVotesPerVoter ?? 1}</span>
+                </div>
 
-              <div className="vote-option-list">
-                {category.nominees.map((nominee) => {
-                  const isSelected = selectedId === nominee.nomineeId;
-                  const isSubmitted = alreadySubmitted && selectedVotes[category.categoryId] === nominee.nomineeId;
+                {category.nominees.length === 0 ? (
+                  <div className="vote-option-list">
+                    <p className="vote-no-nominees">No approved nominees in this category yet.</p>
+                  </div>
+                ) : (
+                  <div className="vote-option-list">
+                    {category.nominees.map((nominee) => {
+                      const isSelected = selectedId === nominee.nomineeId;
+                      const isSubmitted =
+                        alreadySubmitted && submittedVotes[category.categoryId] === nominee.nomineeId;
 
-                  return (
-                    <label
-                      key={nominee.nomineeId}
-                      className={`vote-option ${isSelected ? 'selected' : ''} ${isSubmitted ? 'submitted' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`vote-${category.categoryId}`}
-                        checked={isSelected}
-                        onChange={() => handleSelect(category.categoryId, nominee.nomineeId)}
-                        disabled={alreadySubmitted}
-                      />
-                      <div className="vote-option-main">
-                        <div className="vote-option-title-row">
-                          <strong>{nominee.name}</strong>
-                          <span>{nominee.score}/100</span>
-                        </div>
-                        <small>{nominee.organization}</small>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
+                      return (
+                        <label
+                          key={nominee.nomineeId}
+                          className={`vote-option ${isSelected ? 'selected' : ''} ${isSubmitted ? 'submitted' : ''}`}
+                        >
+                          <input
+                            type="radio"
+                            name={`vote-${category.categoryId}`}
+                            checked={isSelected}
+                            onChange={() => handleSelect(category.categoryId, nominee.nomineeId)}
+                            disabled={alreadySubmitted}
+                          />
+                          <div className="vote-option-main">
+                            <div className="vote-option-title-row">
+                              <strong>{nominee.nomineeName || nominee.nomineeEmail}</strong>
+                            </div>
+                            <small>{nominee.title}</small>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
 
-              <div className="vote-card-footer">
-                <span>
-                  {selectedId ? 'Candidate selected' : 'No candidate selected yet'}
-                </span>
-                <Button
-                  variant={alreadySubmitted ? 'secondary' : 'primary'}
-                  size="md"
-                  onClick={() => handleSubmitVote(category)}
-                  disabled={alreadySubmitted}
-                >
-                  {alreadySubmitted ? 'Submitted' : 'Submit Vote'}
-                </Button>
+                <div className="vote-card-footer">
+                  <span>
+                    {selectedId ? 'Candidate selected' : 'No candidate selected yet'}
+                  </span>
+                  <Button
+                    variant={alreadySubmitted ? 'secondary' : 'primary'}
+                    size="md"
+                    onClick={() => handleSubmitVote(category)}
+                    disabled={alreadySubmitted || category.nominees.length === 0}
+                  >
+                    {alreadySubmitted ? 'Submitted' : 'Submit Vote'}
+                  </Button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
