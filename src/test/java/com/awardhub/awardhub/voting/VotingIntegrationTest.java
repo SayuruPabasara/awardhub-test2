@@ -102,34 +102,34 @@ public class VotingIntegrationTest {
         );
     }
 
-    @Test
-    public void testGetMyVotes() {
-        // Arrange - submit multiple votes
-        voteService.submitVote(voter.getUserID(), category.getCategoryId(), nominee.getUserID());
-        
-        Nominee nominee2 = new Nominee();
-        nominee2.setEmail("nominee2@test.com");
-        nominee2.setPassword("password123");
-        nominee2.setContactNumber("5555555555");
-        nominee2.setAccountStatus(AccountStatus.ACTIVE);
-        nominee2 = nomineeRepository.save(nominee2);
-        
-        AwardCategory category2 = new AwardCategory();
-        category2.setCategoryName("Best Leadership");
-        category2.setStatus(CategoryStatus.VOTING_OPEN);
-        category2.setEvaluationMethod(com.awardhub.awardhub.category.entity.EvaluationMethod.VOTING_ONLY);
-        category2 = categoryRepository.save(category2);
-        
-        voteService.submitVote(voter.getUserID(), category2.getCategoryId(), nominee2.getUserID());
+ @Test
+public void testGetMyVotes() {
+    // Arrange - submit multiple votes
+    voteService.submitVote(voter.getUserID(), category.getCategoryId(), nominee.getUserID());
+    
+    Nominee nominee2 = new Nominee();
+    nominee2.setEmail("nominee2@test.com");
+    nominee2.setPassword("password123");
+    nominee2.setContactNumber("5555555555");
+    nominee2.setAccountStatus(AccountStatus.ACTIVE);
+    Nominee savedNominee2 = nomineeRepository.save(nominee2);
+    
+    AwardCategory category2 = new AwardCategory();
+    category2.setCategoryName("Best Leadership");
+    category2.setStatus(CategoryStatus.VOTING_OPEN);
+    category2.setEvaluationMethod(com.awardhub.awardhub.category.entity.EvaluationMethod.VOTING_ONLY);
+    AwardCategory savedCategory2 = categoryRepository.save(category2);
+    
+    voteService.submitVote(voter.getUserID(), savedCategory2.getCategoryId(), savedNominee2.getUserID());
 
-        // Act
-        var votes = voteService.getMyVotes(voter.getUserID());
+    // Act
+    var votes = voteService.getMyVotes(voter.getUserID());
 
-        // Assert
-        assertEquals(2, votes.size());
-        assertTrue(votes.stream().anyMatch(v -> v.getCategoryId().equals(category.getCategoryId())));
-        assertTrue(votes.stream().anyMatch(v -> v.getCategoryId().equals(category2.getCategoryId())));
-    }
+    // Assert
+    assertEquals(2, votes.size());
+    assertTrue(votes.stream().anyMatch(v -> v.getCategoryId().equals(category.getCategoryId())));
+    assertTrue(votes.stream().anyMatch(v -> v.getCategoryId().equals(savedCategory2.getCategoryId())));
+}
 
     @Test
     public void testGetVotesByCategory() {

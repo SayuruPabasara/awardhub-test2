@@ -149,27 +149,29 @@ public class EvaluationIntegrationTest {
         assertNotNull(updated.getTotalScore());
     }
 
-    @Test
-    public void testSubmitEvaluationUnauthorized() {
-        // Arrange
-        Judge otherJudge = new Judge();
-        otherJudge.setEmail("otherjudge@test.com");
-        otherJudge.setPassword("password123");
-        otherJudge.setContactNumber("5555555555");
-        otherJudge.setAccountStatus(AccountStatus.ACTIVE);
-        otherJudge = (Judge) userRepository.save(otherJudge);
+@Test
+public void testSubmitEvaluationUnauthorized() {
+    // Arrange
+    Judge otherJudge = new Judge();
+    otherJudge.setEmail("otherjudge@test.com");
+    otherJudge.setPassword("password123");
+    otherJudge.setContactNumber("5555555555");
+    otherJudge.setAccountStatus(AccountStatus.ACTIVE);
+    
+    // Save to a separate final/effectively final variable
+    Judge savedOtherJudge = (Judge) userRepository.save(otherJudge);
 
-        Map<String, Integer> scores = new HashMap<>();
-        scores.put("innovation", 85);
+    Map<String, Integer> scores = new HashMap<>();
+    scores.put("innovation", 85);
 
-        EvaluationRequest request = new EvaluationRequest();
-        request.setScores(scores);
+    EvaluationRequest request = new EvaluationRequest();
+    request.setScores(scores);
 
-        // Act & Assert - different judge cannot submit
-        assertThrows(BadRequestException.class, () ->
-            evaluationService.submitEvaluation(evaluation.getEvaluationId(), otherJudge.getUserID(), request)
-        );
-    }
+    // Act & Assert - reference savedOtherJudge instead
+    assertThrows(BadRequestException.class, () ->
+        evaluationService.submitEvaluation(evaluation.getEvaluationId(), savedOtherJudge.getUserID(), request)
+    );
+}
 
     @Test
     public void testCannotResubmitCompleteEvaluation() {
