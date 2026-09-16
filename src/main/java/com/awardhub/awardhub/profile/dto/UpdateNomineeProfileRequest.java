@@ -1,20 +1,51 @@
 package com.awardhub.awardhub.profile.dto;
 
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 public class UpdateNomineeProfileRequest {
 
+    @Pattern(regexp = "^[+]?[0-9 \\-]{7,15}$", message = "Enter a valid contact number")
     private String contactNumber;
+
+    @Pattern(regexp = "^([0-9]{9}[vVxX]|[0-9]{12}|[A-Za-z][0-9]{7,9})$",
+             message = "Enter a valid NIC or passport number")
     private String nicPassport;
+
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "Date of birth must be a valid date")
     private String dateOfBirth;
+
+    @Pattern(regexp = "^(Male|Female|Other|Prefer not to say)$", message = "Select a valid gender option")
     private String gender;
+
+    @Size(max = 150, message = "Street address is too long")
     private String street;
+
+    @Size(max = 100, message = "City is too long")
     private String city;
+
+    @Size(max = 100, message = "State/Province is too long")
     private String state;
+
+    @Pattern(regexp = "^[0-9A-Za-z \\-]{3,10}$", message = "Enter a valid postal/zip code")
     private String zip;
+
+    @Size(max = 150, message = "Organization name is too long")
     private String organization;
+
+    @Size(max = 150, message = "Job title is too long")
     private String jobTitle;
+
+    @Size(max = 5000, message = "Biography is too long")
     private String biography;
+
+    @Size(max = 5000, message = "Education is too long")
     private String education;
+
+    @Size(max = 5000, message = "Achievements is too long")
     private String achievements;
+
+    @Size(max = 5000, message = "References is too long")
     private String references;
 
     public UpdateNomineeProfileRequest() {}
