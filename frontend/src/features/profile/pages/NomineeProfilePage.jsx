@@ -34,6 +34,28 @@ export default function NomineeProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (profile.contactNumber && !/^[+]?[0-9 \-]{7,15}$/.test(profile.contactNumber)) {
+      errs.contactNumber = 'Enter a valid contact number';
+    }
+    if (profile.nicPassport && !/^([0-9]{9}[vVxX]|[0-9]{12}|[A-Za-z][0-9]{7,9})$/.test(profile.nicPassport)) {
+      errs.nicPassport = 'Enter a valid NIC or passport number';
+    }
+    if (profile.zip && !/^[0-9A-Za-z \-]{3,10}$/.test(profile.zip)) {
+      errs.zip = 'Enter a valid postal/zip code';
+    }
+    if (profile.dateOfBirth) {
+      const dob = new Date(profile.dateOfBirth);
+      if (Number.isNaN(dob.getTime()) || dob > new Date()) {
+        errs.dateOfBirth = 'Enter a valid date of birth';
+      }
+    }
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -59,6 +81,10 @@ export default function NomineeProfilePage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!validate()) {
+      toast.error('Please fix the highlighted fields before saving.');
+      return;
+    }
     try {
       setSaving(true);
       await profileApi.updateMyProfile(profile);
@@ -195,6 +221,7 @@ export default function NomineeProfilePage() {
                 value={profile.nicPassport || ''}
                 onChange={handleChange}
                 placeholder="National Identity Card number"
+                error={fieldErrors.nicPassport}
               />
               <Input
                 label="Date of Birth"
@@ -202,6 +229,7 @@ export default function NomineeProfilePage() {
                 name="dateOfBirth"
                 value={profile.dateOfBirth || ''}
                 onChange={handleChange}
+                error={fieldErrors.dateOfBirth}
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: 'var(--font-xs)', fontWeight: 600, color: 'var(--slate-700)' }}>
@@ -226,6 +254,7 @@ export default function NomineeProfilePage() {
                 value={profile.contactNumber || ''}
                 onChange={handleChange}
                 placeholder="+94 77 000 0000"
+                error={fieldErrors.contactNumber}
               />
               <Input
                 label="Street Address"
@@ -254,6 +283,7 @@ export default function NomineeProfilePage() {
                 value={profile.zip || ''}
                 onChange={handleChange}
                 placeholder="Postal code"
+                error={fieldErrors.zip}
               />
             </div>
           </Card>
