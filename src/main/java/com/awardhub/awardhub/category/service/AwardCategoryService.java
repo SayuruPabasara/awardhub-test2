@@ -89,6 +89,11 @@ public class AwardCategoryService {
         if (req.getRequiredDocumentTypes() != null) {
             cat.setRequiredDocumentTypes(req.getRequiredDocumentTypes());
         }
+        if (req.getRubricCriteria() != null && !req.getRubricCriteria().isEmpty()) {
+            cat.setRubricCriteria(new java.util.ArrayList<>(req.getRubricCriteria()));
+        } else {
+            cat.setRubricCriteria(new java.util.ArrayList<>(AwardCategory.getDefaultRubric()));
+        }
 
         AwardCategory saved = categoryRepository.save(cat);
         auditLogService.log(userId, "CREATE_CATEGORY", "AwardCategory", saved.getCategoryId(), "Created category: " + saved.getCategoryName());
@@ -118,6 +123,7 @@ public class AwardCategoryService {
         if (req.getMaxVotesPerVoter() != null) cat.setMaxVotesPerVoter(req.getMaxVotesPerVoter());
         if (req.getStatus() != null) cat.setStatus(req.getStatus());
         if (req.getRequiredDocumentTypes() != null) cat.setRequiredDocumentTypes(req.getRequiredDocumentTypes());
+        if (req.getRubricCriteria() != null) cat.setRubricCriteria(new java.util.ArrayList<>(req.getRubricCriteria()));
 
         validateCategoryDatesAndWeights(
                 cat.getNominationDeadline(),

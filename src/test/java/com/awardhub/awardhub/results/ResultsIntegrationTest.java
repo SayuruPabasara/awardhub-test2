@@ -109,6 +109,7 @@ public class ResultsIntegrationTest {
         nomination.setNominee(nominee);
         nomination.setCategory(category);
         nomination.setTitle("Great Innovation");
+        nomination.setAchievementDescription("Pioneering innovation in robotics");
         nomination.setStatus(NominationStatus.APPROVED);
         nomination.setSubmissionDate(LocalDateTime.now());
         nomination = nominationRepository.save(nomination);

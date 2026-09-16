@@ -21,6 +21,7 @@ public class CategoryResponse {
     private Integer maxVotesPerVoter;
     private CategoryStatus status;
     private List<String> requiredDocumentTypes;
+    private List<com.awardhub.awardhub.category.entity.RubricCriterion> rubricCriteria;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -41,6 +42,12 @@ public class CategoryResponse {
         dto.setMaxVotesPerVoter(category.getMaxVotesPerVoter());
         dto.setStatus(category.getStatus());
         dto.setRequiredDocumentTypes(category.getRequiredDocumentTypes());
+        List<com.awardhub.awardhub.category.entity.RubricCriterion> criteria = category.getRubricCriteria();
+        if (criteria == null || criteria.isEmpty()) {
+            dto.setRubricCriteria(AwardCategory.getDefaultRubric());
+        } else {
+            dto.setRubricCriteria(criteria);
+        }
         dto.setCreatedAt(category.getCreatedAt());
         dto.setUpdatedAt(category.getUpdatedAt());
         return dto;
@@ -166,5 +173,13 @@ public class CategoryResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<com.awardhub.awardhub.category.entity.RubricCriterion> getRubricCriteria() {
+        return rubricCriteria;
+    }
+
+    public void setRubricCriteria(List<com.awardhub.awardhub.category.entity.RubricCriterion> rubricCriteria) {
+        this.rubricCriteria = rubricCriteria;
     }
 }

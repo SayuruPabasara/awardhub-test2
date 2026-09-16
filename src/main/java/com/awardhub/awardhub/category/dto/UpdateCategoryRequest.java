@@ -19,6 +19,7 @@ public class UpdateCategoryRequest {
     private Integer maxVotesPerVoter;
     private CategoryStatus status;
     private List<String> requiredDocumentTypes;
+    private List<com.awardhub.awardhub.category.entity.RubricCriterion> rubricCriteria;
 
     public UpdateCategoryRequest() {}
 
@@ -118,5 +119,13 @@ public class UpdateCategoryRequest {
 
     public void setRequiredDocumentTypes(List<String> requiredDocumentTypes) {
         this.requiredDocumentTypes = requiredDocumentTypes;
+    }
+
+    public List<com.awardhub.awardhub.category.entity.RubricCriterion> getRubricCriteria() {
+        return rubricCriteria;
+    }
+
+    public void setRubricCriteria(List<com.awardhub.awardhub.category.entity.RubricCriterion> rubricCriteria) {
+        this.rubricCriteria = rubricCriteria;
     }
 }

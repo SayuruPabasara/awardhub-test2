@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
 import Input from '../../../components/Input';
 import Button from '../../../components/Button';
@@ -11,6 +12,14 @@ const AVAILABLE_DOC_TYPES = [
   { id: 'IDENTITY_PROOF', label: 'Identity / NIC Proof' },
   { id: 'CERTIFICATES', label: 'Certificates & Awards' },
   { id: 'PROJECT_REPORT', label: 'Detailed Project Report' },
+];
+
+const DEFAULT_RUBRIC = [
+  { key: 'innovation', label: 'Innovation', weight: 30 },
+  { key: 'impact', label: 'Impact & Relevance', weight: 25 },
+  { key: 'feasibility', label: 'Feasibility', weight: 20 },
+  { key: 'presentation', label: 'Presentation & Clarity', weight: 15 },
+  { key: 'ethics', label: 'Ethical & Societal Considerations', weight: 10 },
 ];
 
 export default function CategoryFormModal({
@@ -33,6 +42,7 @@ export default function CategoryFormModal({
     maxVotesPerVoter: 1,
     status: 'DRAFT',
     requiredDocumentTypes: ['RESUME'],
+    rubricCriteria: DEFAULT_RUBRIC,
   });
 
   useEffect(() => {
@@ -50,6 +60,7 @@ export default function CategoryFormModal({
         maxVotesPerVoter: initialData.maxVotesPerVoter ?? 1,
         status: initialData.status || 'DRAFT',
         requiredDocumentTypes: initialData.requiredDocumentTypes || ['RESUME'],
+        rubricCriteria: initialData.rubricCriteria?.length ? initialData.rubricCriteria : DEFAULT_RUBRIC,
       });
     } else {
       setFormData({
@@ -65,6 +76,7 @@ export default function CategoryFormModal({
         maxVotesPerVoter: 1,
         status: 'DRAFT',
         requiredDocumentTypes: ['RESUME'],
+        rubricCriteria: DEFAULT_RUBRIC,
       });
     }
   }, [initialData, isOpen]);
@@ -94,8 +106,27 @@ export default function CategoryFormModal({
     }));
   };
 
+  const handleCriterionWeightChange = (index, value) => {
+    const num = Math.min(100, Math.max(0, Number(value) || 0));
+    setFormData((prev) => {
+      const updated = [...(prev.rubricCriteria || [])];
+      updated[index] = { ...updated[index], weight: num };
+      return { ...prev, rubricCriteria: updated };
+    });
+  };
+
+  const totalRubricWeight = (formData.rubricCriteria || []).reduce(
+    (acc, curr) => acc + (Number(curr.weight) || 0),
+    0
+  );
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (formData.evaluationMethod !== 'VOTING_ONLY' && totalRubricWeight !== 100) {
+      toast.error(`Total rubric criteria weight must equal 100% (currently ${totalRubricWeight}%)`);
+      return;
+    }
+
     const payload = {
       ...formData,
       maxVotesPerVoter: Number(formData.maxVotesPerVoter),
@@ -104,6 +135,7 @@ export default function CategoryFormModal({
       nominationDeadline: formData.nominationDeadline ? `${formData.nominationDeadline}:00` : null,
       votingStartDate: formData.votingStartDate ? `${formData.votingStartDate}:00` : null,
       votingEndDate: formData.votingEndDate ? `${formData.votingEndDate}:00` : null,
+      rubricCriteria: formData.rubricCriteria,
     };
     onSubmit(payload);
   };
@@ -236,6 +268,64 @@ export default function CategoryFormModal({
               value={formData.votingWeightage}
               onChange={handleSliderChange}
             />
+          </div>
+        )}
+
+        {formData.evaluationMethod !== 'VOTING_ONLY' && (
+          <div className="category-form-field">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label className="category-form-label" style={{ margin: 0 }}>
+                Judge Scoring Rubric Criteria
+              </label>
+              <span
+                style={{
+                  fontSize: 'var(--font-xs)',
+                  fontWeight: 600,
+                  color: totalRubricWeight === 100 ? 'var(--emerald-600, #059669)' : 'var(--rose-600, #e11d48)',
+                }}
+              >
+                Total Weight: {totalRubricWeight}% {totalRubricWeight === 100 ? '✓' : '(Must equal 100%)'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {(formData.rubricCriteria || []).map((criterion, idx) => (
+                <div
+                  key={criterion.key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    background: 'var(--slate-50)',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--slate-200)',
+                  }}
+                >
+                  <span style={{ fontSize: 'var(--font-sm)', color: 'var(--slate-800)', fontWeight: 500 }}>
+                    {criterion.label}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={criterion.weight}
+                      onChange={(e) => handleCriterionWeightChange(idx, e.target.value)}
+                      style={{
+                        width: 64,
+                        padding: '4px 8px',
+                        border: '1px solid var(--slate-300)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--font-sm)',
+                        textAlign: 'right',
+                      }}
+                    />
+                    <span style={{ fontSize: 'var(--font-xs)', color: 'var(--slate-500)' }}>%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

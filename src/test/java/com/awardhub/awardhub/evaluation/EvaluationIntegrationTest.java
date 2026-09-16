@@ -8,6 +8,7 @@ import com.awardhub.awardhub.evaluation.dto.EvaluationRequest;
 import com.awardhub.awardhub.evaluation.entity.Evaluation;
 import com.awardhub.awardhub.evaluation.repository.EvaluationRepository;
 import com.awardhub.awardhub.evaluation.service.EvaluationService;
+import com.awardhub.awardhub.nomination.dto.EvaluationAssignmentRequest;
 import com.awardhub.awardhub.nomination.entity.Nomination;
 import com.awardhub.awardhub.nomination.entity.NominationStatus;
 import com.awardhub.awardhub.nomination.repository.NominationRepository;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,6 +63,7 @@ public class EvaluationIntegrationTest {
         judge.setEmail("judge@test.com");
         judge.setPassword("password123");
         judge.setContactNumber("1234567890");
+        judge.setAreaOfExpertise("Computer Science");
         judge.setAccountStatus(AccountStatus.ACTIVE);
         judge = (Judge) userRepository.save(judge);
 
@@ -72,11 +75,12 @@ public class EvaluationIntegrationTest {
         nominee.setAccountStatus(AccountStatus.ACTIVE);
         nominee = nomineeRepository.save(nominee);
 
-        // Create category
+        // Create category with default rubric
         category = new AwardCategory();
         category.setCategoryName("Best Innovation");
         category.setStatus(CategoryStatus.UNDER_EVALUATION);
         category.setEvaluationMethod(com.awardhub.awardhub.category.entity.EvaluationMethod.HYBRID);
+        category.setRubricCriteria(AwardCategory.getDefaultRubric());
         category = categoryRepository.save(category);
 
         // Create nomination
@@ -84,6 +88,7 @@ public class EvaluationIntegrationTest {
         nomination.setNominee(nominee);
         nomination.setCategory(category);
         nomination.setTitle("Great Innovation");
+        nomination.setAchievementDescription("Pioneering autonomous navigation algorithm for robotics.");
         nomination.setStatus(NominationStatus.APPROVED);
         nomination.setSubmissionDate(LocalDateTime.now());
         nomination = nominationRepository.save(nomination);
@@ -108,6 +113,9 @@ public class EvaluationIntegrationTest {
         assertNotNull(assignments);
         assertTrue(assignments.size() > 0);
         assertEquals("PENDING", assignments.get(0).getStatus());
+        assertEquals("Great Innovation", assignments.get(0).getNominationTitle());
+        assertNotNull(assignments.get(0).getRubric());
+        assertEquals(5, assignments.get(0).getRubric().size());
     }
 
     @Test
@@ -128,6 +136,8 @@ public class EvaluationIntegrationTest {
         scores.put("innovation", 85);
         scores.put("impact", 90);
         scores.put("feasibility", 80);
+        scores.put("presentation", 75);
+        scores.put("ethics", 95);
 
         EvaluationRequest request = new EvaluationRequest();
         request.setNominationId(nomination.getNominationId());
@@ -142,6 +152,9 @@ public class EvaluationIntegrationTest {
         assertEquals("COMPLETED", response.getStatus());
         assertNotNull(response.getTotalScore());
         assertTrue(response.getTotalScore() > 0);
+        assertEquals("Excellent work on this innovation project", response.getComments());
+        assertNotNull(response.getCriterionScores());
+        assertEquals(85, response.getCriterionScores().get("innovation"));
 
         // Verify evaluation is updated in database
         Evaluation updated = evaluationRepository.findById(evaluation.getEvaluationId()).get();
@@ -149,29 +162,28 @@ public class EvaluationIntegrationTest {
         assertNotNull(updated.getTotalScore());
     }
 
-@Test
-public void testSubmitEvaluationUnauthorized() {
-    // Arrange
-    Judge otherJudge = new Judge();
-    otherJudge.setEmail("otherjudge@test.com");
-    otherJudge.setPassword("password123");
-    otherJudge.setContactNumber("5555555555");
-    otherJudge.setAccountStatus(AccountStatus.ACTIVE);
-    
-    // Save to a separate final/effectively final variable
-    Judge savedOtherJudge = (Judge) userRepository.save(otherJudge);
+    @Test
+    public void testSubmitEvaluationUnauthorized() {
+        // Arrange
+        Judge otherJudge = new Judge();
+        otherJudge.setEmail("otherjudge@test.com");
+        otherJudge.setPassword("password123");
+        otherJudge.setContactNumber("5555555555");
+        otherJudge.setAccountStatus(AccountStatus.ACTIVE);
+        
+        Judge savedOtherJudge = (Judge) userRepository.save(otherJudge);
 
-    Map<String, Integer> scores = new HashMap<>();
-    scores.put("innovation", 85);
+        Map<String, Integer> scores = new HashMap<>();
+        scores.put("innovation", 85);
 
-    EvaluationRequest request = new EvaluationRequest();
-    request.setScores(scores);
+        EvaluationRequest request = new EvaluationRequest();
+        request.setScores(scores);
 
-    // Act & Assert - reference savedOtherJudge instead
-    assertThrows(BadRequestException.class, () ->
-        evaluationService.submitEvaluation(evaluation.getEvaluationId(), savedOtherJudge.getUserID(), request)
-    );
-}
+        // Act & Assert
+        assertThrows(BadRequestException.class, () ->
+            evaluationService.submitEvaluation(evaluation.getEvaluationId(), savedOtherJudge.getUserID(), request)
+        );
+    }
 
     @Test
     public void testCannotResubmitCompleteEvaluation() {
@@ -188,5 +200,31 @@ public void testSubmitEvaluationUnauthorized() {
         assertThrows(BadRequestException.class, () ->
             evaluationService.submitEvaluation(evaluation.getEvaluationId(), judge.getUserID(), request)
         );
+    }
+
+    @Test
+    public void testOrganizerGetAllEvaluations() {
+        var list = evaluationService.getAllEvaluations(category.getCategoryId(), nomination.getNominationId(), "PENDING");
+        assertNotNull(list);
+        assertEquals(1, list.size());
+        assertEquals(judge.getEmail(), list.get(0).getJudgeEmail());
+        assertNotNull(list.get(0).getNominationSummary());
+    }
+
+    @Test
+    public void testOrganizerAssignJudges() {
+        // Create second judge
+        Judge judge2 = new Judge();
+        judge2.setEmail("judge2@test.com");
+        judge2.setPassword("password123");
+        judge2.setContactNumber("9999999999");
+        judge2.setAccountStatus(AccountStatus.ACTIVE);
+        judge2 = (Judge) userRepository.save(judge2);
+
+        EvaluationAssignmentRequest assignReq = new EvaluationAssignmentRequest(nomination.getNominationId(), List.of(judge2.getUserID()));
+        var assigned = evaluationService.assignJudgesToNomination(assignReq, 1L);
+
+        assertEquals(1, assigned.size());
+        assertEquals(judge2.getUserID(), assigned.get(0).getJudgeId());
     }
 }

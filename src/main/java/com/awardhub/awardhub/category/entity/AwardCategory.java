@@ -58,6 +58,10 @@ public class AwardCategory {
     @Column(name = "document_type")
     private List<String> requiredDocumentTypes = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "category_rubric_criteria", joinColumns = @JoinColumn(name = "category_id"))
+    private List<RubricCriterion> rubricCriteria = new ArrayList<>();
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -181,6 +185,24 @@ public class AwardCategory {
 
     public void setRequiredDocumentTypes(List<String> requiredDocumentTypes) {
         this.requiredDocumentTypes = requiredDocumentTypes;
+    }
+
+    public List<RubricCriterion> getRubricCriteria() {
+        return rubricCriteria;
+    }
+
+    public void setRubricCriteria(List<RubricCriterion> rubricCriteria) {
+        this.rubricCriteria = rubricCriteria;
+    }
+
+    public static List<RubricCriterion> getDefaultRubric() {
+        return List.of(
+            new RubricCriterion("innovation", "Innovation", 30.0),
+            new RubricCriterion("impact", "Impact & Relevance", 25.0),
+            new RubricCriterion("feasibility", "Feasibility", 20.0),
+            new RubricCriterion("presentation", "Presentation & Clarity", 15.0),
+            new RubricCriterion("ethics", "Ethical & Societal Considerations", 10.0)
+        );
     }
 
     public LocalDateTime getCreatedAt() {

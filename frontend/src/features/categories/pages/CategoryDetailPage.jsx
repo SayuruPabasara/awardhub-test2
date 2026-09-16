@@ -190,6 +190,36 @@ export default function CategoryDetailPage() {
               ))}
             </div>
           </Card>
+
+          {/* Judge Scoring Rubric */}
+          {category.evaluationMethod !== 'VOTING_ONLY' && (
+            <Card title="Judge Scoring Rubric">
+              <p style={{ fontSize: 'var(--font-xs)', color: 'var(--slate-500)', marginBottom: 'var(--space-3)' }}>
+                Certified judges evaluate each approved nomination against these predetermined criteria and weights:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                {(category.rubricCriteria || []).map((crit) => (
+                  <div
+                    key={crit.key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 14px',
+                      background: 'var(--slate-50)',
+                      border: '1px solid var(--slate-200)',
+                      borderRadius: 'var(--radius-md)',
+                    }}
+                  >
+                    <span style={{ fontSize: 'var(--font-sm)', color: 'var(--slate-800)', fontWeight: 500 }}>
+                      {crit.label}
+                    </span>
+                    <Badge variant="primary">{crit.weight}% Weight</Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Weightage & Timeline */}
