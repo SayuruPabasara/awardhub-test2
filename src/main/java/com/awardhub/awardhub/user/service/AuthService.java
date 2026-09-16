@@ -37,6 +37,8 @@ public class AuthService {
             throw new DuplicateResourceException("User", "email", request.getEmail());
         }
 
+        validateRoleSpecificFields(request);
+
         // Create the appropriate subtype entity based on role
         User user = createUserByRole(request);
         user.setEmail(request.getEmail());
@@ -158,6 +160,22 @@ public class AuthService {
         }
 
         otpService.generateAndSend(email);
+    }
+
+    /**
+     * Ensures the identity field required for the selected role was actually
+     * supplied. @Pattern on the DTO only checks format when a value is
+     * present; presence itself depends on the role, so it's enforced here.
+     */
+    private void validateRoleSpecificFields(RegisterRequest request) {
+        if (request.getRole() == UserRole.NOMINEE
+                && (request.getNicPassport() == null || request.getNicPassport().isBlank())) {
+            throw new BadRequestException("NIC or passport number is required for nominees");
+        }
+        if (request.getRole() == UserRole.VOTER
+                && (request.getNic() == null || request.getNic().isBlank())) {
+            throw new BadRequestException("NIC is required for voters");
+        }
     }
 
     /**

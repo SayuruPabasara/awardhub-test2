@@ -5,6 +5,7 @@ import com.awardhub.awardhub.profile.dto.NomineeProfileResponse;
 import com.awardhub.awardhub.profile.dto.UpdateNomineeProfileRequest;
 import com.awardhub.awardhub.profile.service.NomineeProfileService;
 import com.awardhub.awardhub.user.entity.User;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,7 +33,7 @@ public class NomineeProfileController {
     @PutMapping("/me")
     @PreAuthorize("hasRole('NOMINEE')")
     public ResponseEntity<ApiResponse<NomineeProfileResponse>> updateMyProfile(
-            @RequestBody UpdateNomineeProfileRequest request,
+            @Valid @RequestBody UpdateNomineeProfileRequest request,
             @AuthenticationPrincipal User user
     ) {
         NomineeProfileResponse updated = profileService.updateProfile(user.getUserID(), request);
