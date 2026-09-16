@@ -62,6 +62,23 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const emailPattern = /^[A-Za-z0-9](?:[A-Za-z0-9._%+-]*[A-Za-z0-9])?@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
+    if (!emailPattern.test(form.email)) {
+      setError('Enter a valid email address (e.g. name@example.com)');
+      return;
+    }
+
+    const nicOrPassportPattern = /^([0-9]{9}[vVxX]|[0-9]{12}|[A-Za-z][0-9]{7,9})$/;
+    const nicOnlyPattern = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+    if (form.role === 'NOMINEE' && !nicOrPassportPattern.test(form.nicPassport)) {
+      setError('Enter a valid NIC or passport number');
+      return;
+    }
+    if (form.role === 'VOTER' && !nicOnlyPattern.test(form.nic)) {
+      setError('Enter a valid NIC number');
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
       return;
